@@ -92,6 +92,13 @@ Frame::Frame(App* app, const wxString& title, const wxPoint& pos,
 	this->menu = wxXmlResource::Get()->LoadMenu(wxT("main_menu"));
 	main_menu = this->menu;
 
+#ifdef __APPLE__
+	// As MacOS windows do not have a menu bar, we need to create one
+	menubar = new wxMenuBar();
+	menubar->Append(this->menu, wxT("File"));
+	SetMenuBar(menubar);
+#endif // __APPLE__
+
 	Bind(wxEVT_MENU, &Frame::OnMenuCommand, this);
 	Bind(WX_POPUP_MENU_EVENT, &Frame::OnPopupMenuEvent, this);
 	Bind(WX_UPDATE_MENU_EVENT, &Frame::OnUpdateMenuEvent, this);

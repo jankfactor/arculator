@@ -129,6 +129,7 @@ public:
 	void Start();
 
 	wxMenu* GetMenu();
+	wxMenuBar* GetMenuBar();
 
 private:
 	void OnMenuCommand(wxCommandEvent& event);
@@ -141,6 +142,7 @@ private:
 #endif
 
 	wxMenu* menu;
+	wxMenuBar* menubar;
 
 	void Quit(bool stop_emulator = 1);
 	void ChangeDisc(int drive);
