@@ -1,0 +1,183 @@
+# src/CMakeLists.txt - Main Arculator executable
+
+# Common source files for all platforms
+set(ARCULATOR_SOURCES
+    82c711.c
+    82c711_fdc.c
+    arm.c
+    bmu.c
+    cmos.c
+    colourcard.c
+    config.c
+    cp15.c
+    ddnoise.c
+    debugger.c
+    debugger_swis.c
+    disc.c
+    disc_adf.c
+    disc_apd.c
+    disc_fdi.c
+    disc_hfe.c
+    disc_jfd.c
+    disc_mfm_common.c
+    disc_scp.c
+    ds2401.c
+    eterna.c
+    fdi2raw.c
+    fpa.c
+    g16.c
+    g332.c
+    hostfs.c
+    ide.c
+    ide_a3in.c
+    ide_config.c
+    ide_idea.c
+    ide_riscdev.c
+    ide_zidefs.c
+    ide_zidefs_a3k.c
+    input_sdl2.c
+    ioc.c
+    ioeb.c
+    joystick.c
+    keyboard.c
+    lc.c
+    main.c
+    mem.c
+    memc.c
+    podules.c
+    printer.c
+    riscdev_hdfc.c
+    romload.c
+    sound.c
+    sound_sdl2.c
+    st506.c
+    st506_akd52.c
+    timer.c
+    vidc.c
+    video_sdl2.c
+    wd1770.c
+    wx-app.cc
+    wx-config.cc
+    wx-config_sel.cc
+    wx-hd_conf.cc
+    wx-console.cc
+    wx-hd_new.cc
+    wx-joystick-config.cc
+    wx-main.cc
+    wx-podule-config.cc
+    wx-sdl2-joystick.c
+)
+
+# Platform-specific sources
+if(OS_WINDOWS)
+    list(APPEND ARCULATOR_SOURCES
+        hostfs-win.c
+        podules-win.c
+        wx-win32.c
+    )
+elseif(OS_LINUX)
+    list(APPEND ARCULATOR_SOURCES
+        hostfs-unix.c
+        podules-linux.c
+        wx-sdl2.c
+    )
+elseif(OS_MACOSX)
+    list(APPEND ARCULATOR_SOURCES
+        hostfs-unix.c
+        podules-macosx.c
+        wx-sdl2.c
+    )
+else()
+    # OS_OTHER - use Unix-like sources
+    list(APPEND ARCULATOR_SOURCES
+        hostfs-unix.c
+        podules-linux.c
+        wx-sdl2.c
+    )
+endif()
+
+# Generate wx-resources.cc from arculator.xrc
+set(WX_RESOURCES_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/wx-resources.cc)
+if(wxWidgets_wxrc_EXECUTABLE)
+    add_custom_command(
+        OUTPUT ${WX_RESOURCES_OUTPUT}
+        COMMAND ${wxWidgets_wxrc_EXECUTABLE} -c ${CMAKE_CURRENT_SOURCE_DIR}/arculator.xrc -o ${WX_RESOURCES_OUTPUT}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/arculator.xrc
+        COMMENT "Compiling arculator.xrc to C++ source"
+        VERBATIM
+    )
+else()
+    # Fallback: create an empty resource file if wxrc not available
+    file(WRITE ${WX_RESOURCES_OUTPUT} "// Auto-generated placeholder\nvoid InitXmlResource() {}\n")
+endif()
+
+list(APPEND ARCULATOR_SOURCES ${WX_RESOURCES_OUTPUT})
+
+# Create the executable
+add_executable(arculator ${ARCULATOR_SOURCES})
+
+# Include directories
+target_include_directories(arculator PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${SDL2_INCLUDE_DIRS}
+    ${wxWidgets_INCLUDE_DIRS}
+    ${ZLIB_INCLUDE_DIRS}
+)
+
+# Link libraries
+target_link_libraries(arculator PRIVATE
+    ${wxWidgets_LIBRARIES}
+    ${SDL2_LIBRARIES}
+    ZLIB::ZLIB
+    Threads::Threads
+)
+
+# Platform-specific linking
+if(OS_WINDOWS)
+    # Windows-specific libraries
+    target_link_libraries(arculator PRIVATE
+        ws2_32
+        iphlpapi
+    )
+elseif(OS_LINUX)
+    target_link_libraries(arculator PRIVATE
+        ${CMAKE_DL_LIBS}
+        ${X11_LIBRARIES}
+    )
+    target_include_directories(arculator PRIVATE ${X11_INCLUDE_DIR})
+elseif(OS_MACOSX)
+    if(X11_FOUND)
+        target_link_libraries(arculator PRIVATE ${X11_LIBRARIES})
+        target_include_directories(arculator PRIVATE ${X11_INCLUDE_DIRS})
+    endif()
+endif()
+
+# wxWidgets compile definitions and flags
+if(wxWidgets_FOUND AND wxWidgets_DEFINITIONS)
+    target_compile_definitions(arculator PRIVATE ${wxWidgets_DEFINITIONS})
+endif()
+
+# Handle wxWidgets CXX flags
+if(wxWidgets_CXX_FLAGS)
+    separate_arguments(WX_CXX_FLAGS_LIST UNIX_COMMAND "${wxWidgets_CXX_FLAGS}")
+    target_compile_options(arculator PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${WX_CXX_FLAGS_LIST}>)
+endif()
+
+# Set executable properties
+set_target_properties(arculator PROPERTIES
+    OUTPUT_NAME arculator
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# On macOS, create app bundle structure if needed
+if(OS_MACOSX)
+    set_target_properties(arculator PROPERTIES
+        MACOSX_BUNDLE FALSE
+    )
+endif()
+
+# Install target
+install(TARGETS arculator
+    RUNTIME DESTINATION bin
+)
+

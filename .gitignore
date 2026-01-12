@@ -1,2 +1,36 @@
-.vscode
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
+# CMake
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CMakeUserPresets.json
+compile_commands.json
+
+# Build artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Generated files
+wx-resources.cc
+
+# macOS
+.DS_Store
+*.dSYM/
+
+# Dependencies fetched by CMake
+_deps/

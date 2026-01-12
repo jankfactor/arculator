@@ -1,0 +1,91 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Config",
+            "description": "Default build using Ninja generator",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "ARCULATOR_BUILD_PODULES": "ON"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug Build",
+            "description": "Debug build with symbols and debug logging",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "ARCULATOR_ENABLE_DEBUG": "ON",
+                "ARCULATOR_BUILD_PODULES": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release Build",
+            "description": "Optimized release build for distribution",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "ARCULATOR_RELEASE_BUILD": "ON",
+                "ARCULATOR_BUILD_PODULES": "ON"
+            }
+        },
+        {
+            "name": "no-podules",
+            "displayName": "No Podules Build",
+            "description": "Build without podule plugins",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-no-podules",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "ARCULATOR_BUILD_PODULES": "OFF"
+            }
+        },
+        {
+            "name": "xcode",
+            "displayName": "Xcode",
+            "description": "Build using Xcode generator (macOS)",
+            "generator": "Xcode",
+            "binaryDir": "${sourceDir}/build-xcode",
+            "cacheVariables": {
+                "ARCULATOR_BUILD_PODULES": "ON"
+            }
+        },
+        {
+            "name": "vs2022",
+            "displayName": "Visual Studio 2022",
+            "description": "Build using Visual Studio 2022 (Windows)",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build-vs2022",
+            "cacheVariables": {
+                "ARCULATOR_BUILD_PODULES": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default"
+        },
+        {
+            "name": "debug",
+            "configurePreset": "debug"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release"
+        }
+    ]
+}
+
