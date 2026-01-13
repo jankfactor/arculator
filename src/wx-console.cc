@@ -94,7 +94,7 @@ public:
 		}
 
 		last_s = pending_s.Clone();
-		strcpy(s, pending_s);
+		strcpy(s, pending_s.utf8_str());
 		pending_s.clear();
 
 		pending_s_mutex.Unlock();

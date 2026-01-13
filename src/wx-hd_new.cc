@@ -68,13 +68,13 @@ void HDNewDialog::OnOK(wxCommandEvent &event)
 	wxString temp_s;
 
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_CYLINDERS")))->GetValue();
-	new_cylinders = atoi(temp_s);
+	new_cylinders = wxAtoi(temp_s);
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_HEADS")))->GetValue();
-	new_heads = atoi(temp_s);
+	new_heads = wxAtoi(temp_s);
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_SECTORS")))->GetValue();
-	new_sectors = atoi(temp_s);
+	new_sectors = wxAtoi(temp_s);
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_FN")))->GetValue();
-	strncpy(new_fn, temp_s, sizeof(new_fn)-1);
+	strncpy(new_fn, temp_s.utf8_str(), sizeof(new_fn)-1);
 	new_fn[sizeof(new_fn)-1] = 0;
 
 	int total_sectors = new_cylinders * new_heads * new_sectors;
@@ -126,7 +126,7 @@ void HDNewDialog::OnCHS(wxCommandEvent &event)
 	in_callback = true;
 
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_CYLINDERS")))->GetValue();
-	cylinders = atoi(temp_s);
+	cylinders = wxAtoi(temp_s);
 	if (cylinders > MAX_CYLINDERS)
 	{
 		cylinders = MAX_CYLINDERS;
@@ -135,7 +135,7 @@ void HDNewDialog::OnCHS(wxCommandEvent &event)
 	}
 
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_HEADS")))->GetValue();
-	heads = atoi(temp_s);
+	heads = wxAtoi(temp_s);
 	if (heads > MAX_HEADS)
 	{
 		heads = MAX_HEADS;
@@ -144,7 +144,7 @@ void HDNewDialog::OnCHS(wxCommandEvent &event)
 	}
 
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_SECTORS")))->GetValue();
-	sectors = atoi(temp_s);
+	sectors = wxAtoi(temp_s);
 	if (sectors > MAX_SECTORS)
 	{
 		sectors = MAX_SECTORS;
@@ -179,7 +179,7 @@ void HDNewDialog::OnSize(wxCommandEvent &event)
 	in_callback = true;
 
 	temp_s = ((wxTextCtrl *)this->FindWindow(XRCID("IDC_EDIT_SIZE")))->GetValue();
-	size = atoi(temp_s);
+	size = wxAtoi(temp_s);
 	if (size > MAX_SIZE)
 	{
 		size = MAX_SIZE;
