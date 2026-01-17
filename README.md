@@ -4,22 +4,16 @@ Arculator is an Acorn Archimedes emulator originally written by [Sarah Walker](h
 
 ⚠️ **This is a fork of the original project but using CMake instead of automake to assist with cross-platform development. <u>It is currently heavily in progress!</u>** ⚠️
 
-The emulator supports:
-- Multiple Archimedes machine types
-- Various ARM processor variants (ARM2, ARM250, ARM3)
-- RISC OS versions from Arthur to RISC OS 3.19
-- Floppy and hard disc support
-- Expansion podules
-- Sound and joystick emulation
-
 ## Building
 
-Arculator uses CMake as its build system. Dependencies (SDL2, wxWidgets, zlib) are automatically fetched during configuration if not found on your system.
+Arculator uses CMake as its build system. Dependencies (SDL2, wxWidgets, zlib) are automatically fetched during configuration.
 
 ### Prerequisites
 
 - CMake 3.20 or later
-- A C/C++ compiler (GCC, Clang, or MSVC)
+- A C/C++ compiler:
+  - **Linux/macOS**: GCC or Clang
+  - **Windows**: MSYS2 with MinGW64 or UCRT64 toolchain (MSVC is **not** supported)
 - Ninja (recommended) or Make
 
 ### Quick Start
@@ -28,11 +22,11 @@ Arculator uses CMake as its build system. Dependencies (SDL2, wxWidgets, zlib) a
 # Configure with default preset (Release build with Ninja)
 cmake --preset default
 
-# Build
-cmake --build build
+# Build and install
+cmake --build build --target install
 ```
 
-The executable will be placed in `build/bin/arculator` and automatically copied to the project root as `./arculator` for convenience.
+The executable will be installed into an `install` in the root of this project, with the roms, and podules copied in.
 
 ### Available Presets
 
@@ -40,38 +34,20 @@ The executable will be placed in `build/bin/arculator` and automatically copied 
 |--------|-------------|
 | `default` | Release build using Ninja generator |
 | `debug` | Debug build with symbols and debug logging |
-| `release` | Optimized release build for distribution |
 | `no-podules` | Build without podule plugins |
-| `xcode` | Build using Xcode generator (macOS) |
-| `vs2022` | Build using Visual Studio 2022 (Windows) |
+| `msys2-mingw64` | Build using MSYS2 MINGW64 toolchain (Windows) |
+| `msys2-ucrt64` | Build using MSYS2 UCRT64 toolchain (Windows) |
 
-### Examples
+### Platform-Specific Build Guides
 
-```bash
-# Debug build
-cmake --preset debug
-cmake --build build-debug
-
-# Release build
-cmake --preset release
-cmake --build build-release
-
-# Build with Xcode on macOS
-cmake --preset xcode
-cmake --build build-xcode --config Release
-
-# Build with Visual Studio on Windows
-cmake --preset vs2022
-cmake --build build-vs2022 --config Release
-```
+- **[Building on Windows (MSYS2)](docs/Building-Windows-MSYS2.md)** - Guide for building with MinGW64 or UCRT64 toolchains
+- **[Building on macOS/Linux](docs/Building-macOS-Linux.md)** - Guide for building on Unix-like systems
 
 ### Build Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `ARCULATOR_BUILD_PODULES` | ON | Build expansion podule plugins |
-| `ARCULATOR_ENABLE_DEBUG` | OFF | Enable debug logging |
-| `ARCULATOR_RELEASE_BUILD` | OFF | Enable release build optimizations |
 
 ## Running
 

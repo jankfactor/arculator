@@ -27,20 +27,6 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-                "ARCULATOR_ENABLE_DEBUG": "ON",
-                "ARCULATOR_BUILD_PODULES": "ON"
-            }
-        },
-        {
-            "name": "release",
-            "displayName": "Release Build",
-            "description": "Optimized release build for distribution",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build-release",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-                "ARCULATOR_RELEASE_BUILD": "ON",
                 "ARCULATOR_BUILD_PODULES": "ON"
             }
         },
@@ -54,17 +40,6 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
                 "ARCULATOR_BUILD_PODULES": "OFF"
-            }
-        },
-        {
-            "name": "xcode",
-            "displayName": "Xcode",
-            "description": "Build using Xcode generator (macOS)",
-            "generator": "Xcode",
-            "binaryDir": "${sourceDir}/build-xcode",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
-                "ARCULATOR_BUILD_PODULES": "ON"
             }
         },
         {
@@ -109,10 +84,6 @@
             "configurePreset": "debug"
         },
         {
-            "name": "release",
-            "configurePreset": "release"
-        },
-        {
             "name": "msys2-ucrt64",
             "configurePreset": "msys2-ucrt64"
         },
@@ -122,4 +93,3 @@
         }
     ]
 }
-

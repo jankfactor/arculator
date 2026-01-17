@@ -18,15 +18,15 @@ endif()
 
 # Options
 option(ARCULATOR_BUILD_PODULES "Build podule plugins" ON)
-option(ARCULATOR_ENABLE_DEBUG "Enable debug build" OFF)
-option(ARCULATOR_RELEASE_BUILD "Build for release" OFF)
 
-# Compiler flags based on options
-if(ARCULATOR_ENABLE_DEBUG)
+# Compiler flags based on CMAKE_BUILD_TYPE
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(_DEBUG DEBUG_LOG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O0 -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O0 -g")
 else()
+    # Release builds (Release, RelWithDebInfo, MinSizeRel)
+    add_compile_definitions(RELEASE_BUILD)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
@@ -55,9 +55,6 @@ if(MSVC)
     add_compile_options(/W3 /WX-)
 endif()
 
-if(ARCULATOR_RELEASE_BUILD)
-    add_compile_definitions(RELEASE_BUILD)
-endif()
 
 # Platform detection
 if(APPLE)
@@ -135,8 +132,6 @@ message(STATUS "=== Arculator Build Configuration ===")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build podules: ${ARCULATOR_BUILD_PODULES}")
-message(STATUS "Debug mode: ${ARCULATOR_ENABLE_DEBUG}")
-message(STATUS "Release build: ${ARCULATOR_RELEASE_BUILD}")
 message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "")
