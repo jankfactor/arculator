@@ -49,6 +49,8 @@ static int pause_main_thread = 0;
 
 static int infocus = 0;
 
+static int stop_emulation_pending = 0;
+
 void updatewindowsize(int x, int y)
 {
 	winsizex = (x*(video_scale + 1)) / 2;
@@ -152,6 +154,53 @@ void mainthread(LPVOID param)
 		draw_count += new_time - old_time;
 		old_time = new_time;
 
+		/* Process SDL events - this also pumps the Windows message queue */
+		SDL_Event e;
+		while (SDL_PollEvent(&e) != 0)
+		{
+			if (e.type == SDL_QUIT)
+			{
+				if (!stop_emulation_pending)
+				{
+					stop_emulation_pending = 1;
+					arc_stop_emulation();
+				}
+			}
+			if (e.type == SDL_MOUSEBUTTONUP)
+			{
+				if (e.button.button == SDL_BUTTON_LEFT && !mousecapture && !fullscreen && !pause_main_thread)
+				{
+					GetClipCursor(&oldclip);
+					GetWindowRect(ghwnd, &arcclip);
+					arcclip.left += GetSystemMetrics(SM_CXFIXEDFRAME) + 10;
+					arcclip.right -= GetSystemMetrics(SM_CXFIXEDFRAME) + 10;
+					arcclip.top += GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CYMENUSIZE) + GetSystemMetrics(SM_CYCAPTION) + 10;
+					arcclip.bottom -= GetSystemMetrics(SM_CXFIXEDFRAME) + 10;
+					ClipCursor(&arcclip);
+					mousecapture = 1;
+					updatemips = 1;
+					mouse_capture_enable();
+				}
+			}
+			if (e.type == SDL_WINDOWEVENT)
+			{
+				switch (e.window.event)
+				{
+					case SDL_WINDOWEVENT_FOCUS_LOST:
+					if (mousecapture)
+					{
+						ClipCursor(&oldclip);
+						mouse_capture_disable();
+						mousecapture = 0;
+					}
+					break;
+
+					default:
+					break;
+				}
+			}
+		}
+
 		SDL_LockMutex(main_thread_mutex);
 		if (draw_count > 0 && !pause_main_thread)
 		{
@@ -208,15 +257,25 @@ void mainthread(LPVOID param)
 			}
 		}
 
-		if ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) && key[KEY_END] && fullscreen)
+		if ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) && key[KEY_END])
 		{
-			mouse_capture_disable();
-			SDL_SetWindowFullscreen(sdl_main_window, 0);
-			SetMenu(ghwnd, menu);
+			if (fullscreen)
+			{
+				mouse_capture_disable();
+				SDL_SetWindowFullscreen(sdl_main_window, 0);
+				SetMenu(ghwnd, menu);
 
-			fullscreen=0;
-			if (fullborders) updatewindowsize(800,600);
-			else             updatewindowsize(672,544);
+				fullscreen=0;
+				if (fullborders) updatewindowsize(800,600);
+				else             updatewindowsize(672,544);
+			}
+			else if (mousecapture)
+			{
+				ClipCursor(&oldclip);
+				mouse_capture_disable();
+				mousecapture = 0;
+				updatemips = 1;
+			}
 		}
 
 		if (updatemips)
@@ -256,20 +315,15 @@ static void arc_main_thread(LPVOID wx_menu)
 
 	main_thread_h = (HANDLE)_beginthread(mainthread, 0, NULL);
 
+	/* Main Win32 message loop - kept for thread lifetime and handling any
+	   messages that SDL_PollEvent doesn't consume (e.g., some system messages).
+	   Note: Most input events are now handled via SDL_PollEvent in mainthread() */
 	while (GetMessage(&messages, NULL, 0, 0))
 	{
 		/* Translate virtual-key messages into character messages */
 		TranslateMessage(&messages);
 		/* Send message to WindowProcedure */
 		DispatchMessage(&messages);
-
-		if ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) && key[KEY_END] && !fullscreen && mousecapture)
-		{
-			ClipCursor(&oldclip);
-			mouse_capture_disable();
-			mousecapture=0;
-			updatemips=1;
-		}
 	}
 
 	arc_close();
@@ -280,6 +334,7 @@ void arc_start_main_thread(void *wx_window, void *wx_menu)
 {
 	quited = 0;
 	pause_main_thread = 0;
+	stop_emulation_pending = 0;
 	main_thread_mutex = SDL_CreateMutex();
 	wx_window_ptr = wx_window;
 	ui_thread_h = (HANDLE)_beginthread(arc_main_thread, 0, wx_menu);
@@ -416,21 +471,8 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			mousecapture=0;
 		}
 		break;
-		case WM_LBUTTONUP:
-		if (!mousecapture && !fullscreen && !pause_main_thread)
-		{
-			GetClipCursor(&oldclip);
-			GetWindowRect(hwnd,&arcclip);
-			arcclip.left+=GetSystemMetrics(SM_CXFIXEDFRAME)+10;
-			arcclip.right-=GetSystemMetrics(SM_CXFIXEDFRAME)+10;
-			arcclip.top+=GetSystemMetrics(SM_CXFIXEDFRAME)+GetSystemMetrics(SM_CYMENUSIZE)+GetSystemMetrics(SM_CYCAPTION)+10;
-			arcclip.bottom-=GetSystemMetrics(SM_CXFIXEDFRAME)+10;
-			ClipCursor(&arcclip);
-			mousecapture=1;
-			updatemips=1;
-			mouse_capture_enable();
-		}
-		break;
+		/* Note: WM_LBUTTONUP for mouse capture is now handled via SDL_MOUSEBUTTONUP
+		   in mainthread() since SDL_PollEvent processes the Windows message queue */
 
 		case WM_TIMER:
 		if (wParam == TIMER_1SEC)
@@ -438,7 +480,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		break;
 
 		case WM_DESTROY:
-		arc_stop_emulation();
+		if (!stop_emulation_pending)
+		{
+			stop_emulation_pending = 1;
+			arc_stop_emulation();
+		}
 		SetMenu(hwnd, 0);
 		PostMessage(hwnd, WM_QUIT, 0, 0);
 		break;
