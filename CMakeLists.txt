@@ -84,14 +84,11 @@ foreach(CONFIG_TYPE ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_TYPE_UPPER} ${CMAKE_BINARY_DIR}/lib)
 endforeach()
 
-# Include FetchContent for dependency management
-include(FetchContent)
-set(FETCHCONTENT_QUIET OFF)
+# Include CPM for dependency management
+include(cmake/get_cpm.cmake)
 
-# Include dependency modules
-include(deps/zlib.cmake)
-include(deps/sdl2.cmake)
-include(deps/wxwidgets.cmake)
+# Include dependencies (uses CPMAddPackage)
+include(cmake/dependencies.cmake)
 
 # Find system libraries
 find_package(Threads REQUIRED)
