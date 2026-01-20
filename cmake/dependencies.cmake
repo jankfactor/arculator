@@ -36,6 +36,7 @@ CPMAddPackage(
     OPTIONS
         "SDL_SHARED OFF"
         "SDL_STATIC ON"
+        "SDL_STATIC_PIC ON"
         "SDL_TEST OFF"
         "SDL2_DISABLE_INSTALL ON"
 )
@@ -68,6 +69,7 @@ CPMAddPackage(
         "wxUSE_UNICODE ON"
         "wxUSE_UNICODE_UTF8 ON"
         "wxUSE_UNSAFE_WXSTRING_CONV ON"
+        "wxUSE_LIBSDL OFF"
 )
 
 set(wxWidgets_INCLUDE_DIRS 
