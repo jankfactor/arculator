@@ -38,3 +38,4 @@ _deps/
 # Arculator executable
 arculator
 install/
+roms/

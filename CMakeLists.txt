@@ -72,6 +72,19 @@ else()
     add_compile_definitions(OS_OTHER)
 endif()
 
+# RPATH configuration for Linux/macOS so executables find shared libs in ./lib
+if(OS_LINUX OR OS_MACOSX)
+    # Use $ORIGIN (Linux) or @executable_path (macOS) to find libs relative to executable
+    # Include both $ORIGIN/lib (for executable) and $ORIGIN (for libs in lib/ to find each other)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/lib;$ORIGIN")
+    if(OS_MACOSX)
+        set(CMAKE_INSTALL_RPATH "@executable_path/lib;@loader_path")
+    endif()
+    # Don't use the build tree RPATH for installed binaries
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF)
+endif()
+
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
