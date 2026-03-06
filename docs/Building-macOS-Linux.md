@@ -21,6 +21,7 @@ brew install cmake ninja
 ```bash
 sudo apt update
 sudo apt install build-essential cmake ninja-build git \
+    libsdl2-dev libwxgtk3.2-dev zlib1g-dev \
     libgtk-3-dev libx11-dev libasound2-dev
 ```
 
@@ -133,6 +134,7 @@ cmake --install .
 |--------|---------|-------------|
 | `CMAKE_BUILD_TYPE` | Release | Build type: Debug, Release, RelWithDebInfo, MinSizeRel |
 | `ARCULATOR_BUILD_PODULES` | ON | Build expansion podule plugins |
+| `ARCULATOR_BUNDLE_DEPENDENCIES` | OFF on Linux, ON elsewhere | Use bundled (CPM-fetched) dependencies instead of system libraries |
 | `CMAKE_INSTALL_PREFIX` | install/ | Installation directory |
 
 Example with custom options:
@@ -145,7 +147,12 @@ cmake --build build --target install
 ## Troubleshooting
 
 ### Missing dependencies
-The build system will attempt to fetch SDL2, wxWidgets, and zlib automatically if they're not found. This requires an internet connection during the first build.
+On Linux, Arculator uses system libraries by default (`ARCULATOR_BUNDLE_DEPENDENCIES=OFF`). Install missing dev packages via your distro package manager.
+
+To force fetching dependencies from source, configure with:
+```bash
+cmake --preset default -DARCULATOR_BUNDLE_DEPENDENCIES=ON
+```
 
 ### wxWidgets build fails on Linux
 Ensure you have GTK3 development headers installed:

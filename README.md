@@ -6,7 +6,10 @@ Arculator is an Acorn Archimedes emulator originally written by [Sarah Walker](h
 
 ## Building
 
-Arculator uses CMake as its build system. Dependencies (SDL2, wxWidgets, zlib) are automatically fetched during configuration.
+Arculator uses CMake as its build system.
+
+- On Linux, dependencies are resolved from system packages by default (`ARCULATOR_BUNDLE_DEPENDENCIES=OFF`).
+- On Windows/macOS, dependencies are bundled from source by default (`ARCULATOR_BUNDLE_DEPENDENCIES=ON`).
 
 ### Prerequisites
 
@@ -48,6 +51,7 @@ The executable will be installed into an `install` in the root of this project, 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `ARCULATOR_BUILD_PODULES` | ON | Build expansion podule plugins |
+| `ARCULATOR_BUNDLE_DEPENDENCIES` | OFF on Linux, ON elsewhere | Use bundled (CPM-fetched) dependencies instead of system libraries |
 
 ## Running
 
