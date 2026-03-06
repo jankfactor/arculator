@@ -1,5 +1,8 @@
 # cmake/dependencies.cmake - Dependency management using CPM
 #
+# This file is included only when ARCULATOR_BUNDLE_DEPENDENCIES=ON
+# When OFF, system libraries are used via find_package() in the main CMakeLists.txt
+#
 # All dependencies are fetched and built from source via CPM for reproducible builds.
 # This ensures consistent versions across all build environments.
 #
