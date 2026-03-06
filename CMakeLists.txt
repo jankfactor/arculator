@@ -19,6 +19,14 @@ endif()
 # Options
 option(ARCULATOR_BUILD_PODULES "Build podule plugins" ON)
 
+# Option to bundle dependencies (pull and build from source)
+# On Linux, prefer system libraries by default; on Windows/macOS, bundle by default
+if(UNIX AND NOT APPLE)
+    option(ARCULATOR_BUNDLE_DEPENDENCIES "Pull and build dependencies from source instead of using system libraries" OFF)
+else()
+    option(ARCULATOR_BUNDLE_DEPENDENCIES "Pull and build dependencies from source instead of using system libraries" ON)
+endif()
+
 # Compiler flags based on CMAKE_BUILD_TYPE
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(_DEBUG DEBUG_LOG)
@@ -98,11 +106,54 @@ foreach(CONFIG_TYPE ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_TYPE_UPPER} ${CMAKE_BINARY_DIR}/lib)
 endforeach()
 
-# Include CPM for dependency management
-include(cmake/get_cpm.cmake)
-
-# Include dependencies (uses CPMAddPackage)
-include(cmake/dependencies.cmake)
+# Dependency management
+if(ARCULATOR_BUNDLE_DEPENDENCIES)
+    # Include CPM for dependency management
+    include(cmake/get_cpm.cmake)
+    
+    # Include dependencies (uses CPMAddPackage to fetch from source)
+    include(cmake/dependencies.cmake)
+else()
+    # Use system-provided libraries via find_package
+    message(STATUS "Using system libraries (ARCULATOR_BUNDLE_DEPENDENCIES=OFF)")
+    
+    # Find system packages
+    find_package(ZLIB REQUIRED)
+    find_package(SDL2 REQUIRED)
+    find_package(wxWidgets 3.0 REQUIRED COMPONENTS core base adv xrc xml html)
+    
+    # Set variables for compatibility with bundled build
+    set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS})
+    set(ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
+    
+    # SDL2 variables are typically set by the FindSDL2 module or SDL2Config.cmake
+    if(TARGET SDL2::SDL2)
+        # Modern CMake config mode
+        set(SDL2_LIBRARIES SDL2::SDL2)
+        get_target_property(SDL2_INCLUDE_DIRS SDL2::SDL2 INTERFACE_INCLUDE_DIRECTORIES)
+        # SDL2main is typically part of SDL2::SDL2 in modern configs
+        if(TARGET SDL2::SDL2main)
+            list(INSERT SDL2_LIBRARIES 0 SDL2::SDL2main)
+        endif()
+    elseif(SDL2_LIBRARIES)
+        # Legacy find module mode
+        set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIRS})
+        set(SDL2_LIBRARIES ${SDL2_LIBRARIES})
+    endif()
+    
+    # wxWidgets variables from FindwxWidgets module
+    include(${wxWidgets_USE_FILE})
+    set(wxWidgets_INCLUDE_DIRS ${wxWidgets_INCLUDE_DIRS})
+    set(wxWidgets_LIBRARIES ${wxWidgets_LIBRARIES})
+    
+    # For wxrc tool - the FindwxWidgets module should set this
+    if(NOT wxWidgets_wxrc_EXECUTABLE)
+        find_program(wxWidgets_wxrc_EXECUTABLE wxrc)
+    endif()
+    if(NOT wxWidgets_wxrc_EXECUTABLE)
+        message(WARNING "wxrc not found - XRC resources may not compile correctly")
+    endif()
+endif()
 
 # Find system libraries
 find_package(Threads REQUIRED)
@@ -128,6 +179,7 @@ message(STATUS "=== Arculator Build Configuration ===")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build podules: ${ARCULATOR_BUILD_PODULES}")
+message(STATUS "Bundle dependencies: ${ARCULATOR_BUNDLE_DEPENDENCIES}")
 message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "")
