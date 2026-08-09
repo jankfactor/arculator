@@ -135,6 +135,7 @@ cmake --install .
 | `CMAKE_BUILD_TYPE` | Release | Build type: Debug, Release, RelWithDebInfo, MinSizeRel |
 | `ARCULATOR_BUILD_PODULES` | ON | Build expansion podule plugins |
 | `ARCULATOR_BUNDLE_DEPENDENCIES` | OFF on Linux, ON elsewhere | Use bundled (CPM-fetched) dependencies instead of system libraries |
+| `ARCULATOR_USE_WX_MAIN_WINDOW` | OFF | Use the experimental wxWidgets main window instead of SDL2 |
 | `CMAKE_INSTALL_PREFIX` | install/ | Installation directory |
 
 Example with custom options:

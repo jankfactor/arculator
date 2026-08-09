@@ -31,11 +31,11 @@ set(ARCULATOR_SOURCES
     ide.c
     ide_a3in.c
     ide_config.c
+    ide_hccs_a3k.c
     ide_idea.c
     ide_riscdev.c
     ide_zidefs.c
     ide_zidefs_a3k.c
-    input_sdl2.c
     ioc.c
     ioeb.c
     joystick.c
@@ -54,7 +54,6 @@ set(ARCULATOR_SOURCES
     st506_akd52.c
     timer.c
     vidc.c
-    video_sdl2.c
     wd1770.c
     wx-app.cc
     wx-config.cc
@@ -72,28 +71,30 @@ set(ARCULATOR_SOURCES
 if(OS_WINDOWS)
     list(APPEND ARCULATOR_SOURCES
         hostfs-win.c
+        input_sdl2.c
         podules-win.c
+        video_sdl2.c
         wx-win32.c
     )
-elseif(OS_LINUX)
-    list(APPEND ARCULATOR_SOURCES
-        hostfs-unix.c
-        podules-linux.c
-        wx-sdl2.c
-    )
-elseif(OS_MACOSX)
-    list(APPEND ARCULATOR_SOURCES
-        hostfs-unix.c
-        podules-macosx.c
-        wx-sdl2.c
-    )
 else()
-    # OS_OTHER - use Unix-like sources
     list(APPEND ARCULATOR_SOURCES
         hostfs-unix.c
-        podules-linux.c
-        wx-sdl2.c
+        podules-unix.c
     )
+
+    if(ARCULATOR_USE_WX_MAIN_WINDOW)
+        list(APPEND ARCULATOR_SOURCES
+            input_wx.c
+            video_wx.c
+            wx-mainwindow.cc
+        )
+    else()
+        list(APPEND ARCULATOR_SOURCES
+            input_sdl2.c
+            video_sdl2.c
+            wx-sdl2.c
+        )
+    endif()
 endif()
 
 # Generate wx-resources.cc from arculator.xrc
@@ -153,6 +154,20 @@ list(APPEND ARCULATOR_SOURCES ${WX_RESOURCES_OUTPUT})
 
 # Create the executable
 add_executable(arculator ${ARCULATOR_SOURCES})
+
+if(OS_WINDOWS)
+    set(ARCULATOR_PODULE_EXTENSION ".dll")
+elseif(OS_MACOSX)
+    set(ARCULATOR_PODULE_EXTENSION ".dylib")
+else()
+    set(ARCULATOR_PODULE_EXTENSION ".so")
+endif()
+
+target_compile_definitions(arculator PRIVATE SO_EXT="${ARCULATOR_PODULE_EXTENSION}")
+
+if(ARCULATOR_USE_WX_MAIN_WINDOW)
+    target_compile_definitions(arculator PRIVATE UI_WX)
+endif()
 
 # Include directories
 target_include_directories(arculator PRIVATE
@@ -239,5 +254,4 @@ if(OS_WINDOWS)
         endforeach()
     endif()
 endif()
-
 
