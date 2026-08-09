@@ -18,6 +18,11 @@ endif()
 
 # Options
 option(ARCULATOR_BUILD_PODULES "Build podule plugins" ON)
+option(ARCULATOR_USE_WX_MAIN_WINDOW "Use the experimental wxWidgets main window instead of SDL2" OFF)
+
+if(WIN32 AND ARCULATOR_USE_WX_MAIN_WINDOW)
+    message(FATAL_ERROR "ARCULATOR_USE_WX_MAIN_WINDOW is not supported on Windows")
+endif()
 
 # Option to bundle dependencies (pull and build from source)
 # On Linux, prefer system libraries by default; on Windows/macOS, bundle by default
@@ -179,6 +184,7 @@ message(STATUS "=== Arculator Build Configuration ===")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build podules: ${ARCULATOR_BUILD_PODULES}")
+message(STATUS "Use wxWidgets main window: ${ARCULATOR_USE_WX_MAIN_WINDOW}")
 message(STATUS "Bundle dependencies: ${ARCULATOR_BUNDLE_DEPENDENCIES}")
 message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
