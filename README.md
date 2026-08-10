@@ -56,7 +56,7 @@ The executable will be installed into an `install` in the root of this project, 
 
 ## Running
 
-Before running Arculator, you'll need appropriate ROM files placed in the `roms/` directory. See the `roms/` subdirectories for details on which ROM files are expected.
+⚠️ Before running Arculator, you'll need appropriate ROM files placed in the `roms/` directory. See the `roms/` subdirectories for details on which ROM files are expected. To enable podules you'll also need podule ROM files placed in the `podules/` directory. You can find both of these in either the Windows or Linux download from the [original Arculator downloads page](https://b-em.bbcmicro.com/arculator/download.html) and just copy `roms` and `podules` folders over. Be sure to merge rather than replace the existing files when copying them over. 
 
 ## License
 
