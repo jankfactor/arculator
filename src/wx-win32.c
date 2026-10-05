@@ -28,7 +28,7 @@
 void wx_winsendmessage(void *window, int msg, INT_PARAM wParam, LONG_PARAM lParam);
 
 static void *wx_window_ptr;
-static char szClassName[ ] = "WindowsApp";
+static const WCHAR szClassName[] = L"WindowsApp";
 static HWND ghwnd = NULL;
 static HMENU menu = 0;
 static HINSTANCE hinstance;
@@ -49,7 +49,7 @@ static int pause_main_thread = 0;
 
 static int infocus = 0;
 
-static int stop_emulation_pending = 0;
+static LONG stop_emulation_pending = 0;
 
 void updatewindowsize(int x, int y)
 {
@@ -60,7 +60,7 @@ void updatewindowsize(int x, int y)
 
 static void window_create(void *wx_menu)
 {
-	WNDCLASSEX wincl;
+	WNDCLASSEXW wincl;
 	HMENU native_menu;
 	int count, c;
 
@@ -71,11 +71,11 @@ static void window_create(void *wx_menu)
 	wincl.lpszClassName = szClassName;
 	wincl.lpfnWndProc = WindowProcedure;      /* This function is called by windows */
 	wincl.style = CS_DBLCLKS;                 /* Catch double-clicks */
-	wincl.cbSize = sizeof(WNDCLASSEX);
+	wincl.cbSize = sizeof(WNDCLASSEXW);
 
 	/* Use default icon and mouse-pointer */
-	wincl.hIcon = LoadIcon(hinstance, "ArculatorIconName");
-	wincl.hIconSm = LoadIcon(hinstance, "ArculatorIconName");
+	wincl.hIcon = LoadIconW(hinstance, L"ArculatorIconName");
+	wincl.hIconSm = LoadIconW(hinstance, L"ArculatorIconName");
 	wincl.hCursor = NULL;//LoadCursor (NULL, IDC_ARROW);
 	wincl.lpszMenuName = NULL;                 /* No menu */
 	wincl.cbClsExtra = 0;                      /* No extra bytes after the window class */
@@ -89,28 +89,28 @@ static void window_create(void *wx_menu)
 
 	for (c = 0; c < count; c++)
 	{
-		char label[256];
-		MENUITEMINFO info;
+		WCHAR label[256];
+		MENUITEMINFOW info;
 
-		memset(&info, 0, sizeof(MENUITEMINFO));
-		info.cbSize = sizeof(MENUITEMINFO);
+		memset(&info, 0, sizeof(MENUITEMINFOW));
+		info.cbSize = sizeof(MENUITEMINFOW);
 		info.fMask = MIIM_TYPE | MIIM_ID;
 		info.fType = MFT_STRING;
 		info.cch = 256;
 		info.dwTypeData = label;
-		if (GetMenuItemInfo(native_menu, c, 1, &info))
-			AppendMenu(menu, MF_STRING | MF_POPUP, (UINT)GetSubMenu(native_menu, c), info.dwTypeData);
+		if (GetMenuItemInfoW(native_menu, c, 1, &info))
+			AppendMenuW(menu, MF_STRING | MF_POPUP, (UINT_PTR)GetSubMenu(native_menu, c), info.dwTypeData);
 	}
 
 	/* Register the window class, and if it fails quit the program */
-	if (!RegisterClassEx(&wincl))
+	if (!RegisterClassExW(&wincl))
 		fatal("Can not register window class\n");
 
 	/* The class is registered, let's create the program*/
-	ghwnd = CreateWindowEx (
+	ghwnd = CreateWindowExW (
 	   0,                   /* Extended possibilites for variation */
 	   szClassName,         /* Classname */
-	   "Arculator " VERSION_STRING,    /* Title Text */
+	   L"Arculator",                 /* Title Text */
 	   WS_OVERLAPPEDWINDOW&~(WS_MAXIMIZEBOX|WS_SIZEBOX), /* default window */
 	   CW_USEDEFAULT,       /* Windows decides the position */
 	   CW_USEDEFAULT,       /* where the window ends up on the screen */
@@ -121,6 +121,8 @@ static void window_create(void *wx_menu)
 	   hinstance,           /* Program Instance handler */
 	   NULL                 /* No Window Creation data */
 	   );
+	if (!ghwnd)
+		fatal("Can not create window: %lu\n", GetLastError());
 
 	/* Make the window visible on the screen */
 	ShowWindow(ghwnd, 1);
@@ -128,7 +130,21 @@ static void window_create(void *wx_menu)
 
 static volatile int quited = 0;
 
-void mainthread(LPVOID param)
+static void window_destroy(void)
+{
+	/* The submenus belong to wxWidgets and must survive the next session. */
+	stop_emulation_pending = 1;
+	SetMenu(ghwnd, NULL);
+	DestroyWindow(ghwnd);
+	ghwnd = NULL;
+	while (GetMenuItemCount(menu) > 0)
+		RemoveMenu(menu, 0, MF_BYPOSITION);
+	DestroyMenu(menu);
+	menu = NULL;
+	UnregisterClassW(szClassName, hinstance);
+}
+
+static unsigned __stdcall mainthread(void *param)
 {
 	int frames = 0;
 	int draw_count = 0;
@@ -140,7 +156,7 @@ void mainthread(LPVOID param)
 
 	if (!video_renderer_init(ghwnd))
 	{
-		MessageBox(ghwnd, "Video renderer init failed", "Arculator error", MB_OK);
+		MessageBoxA(ghwnd, "Video renderer init failed", "Arculator error", MB_OK);
 		exit(-1);
 	}
 	input_init();
@@ -160,9 +176,8 @@ void mainthread(LPVOID param)
 		{
 			if (e.type == SDL_QUIT)
 			{
-				if (!stop_emulation_pending)
+				if (InterlockedCompareExchange(&stop_emulation_pending, 1, 0) == 0)
 				{
-					stop_emulation_pending = 1;
 					arc_stop_emulation();
 				}
 			}
@@ -256,7 +271,7 @@ void mainthread(LPVOID param)
 
 			if (!video_renderer_reinit(ghwnd))
 			{
-				MessageBox(ghwnd, "Video renderer init failed", "Arculator error", MB_OK);
+				MessageBoxA(ghwnd, "Video renderer init failed", "Arculator error", MB_OK);
 				exit(-1);
 			}
 		}
@@ -287,16 +302,27 @@ void mainthread(LPVOID param)
 			char s[80];
 			sprintf(s, "Arculator %s - %i%% - %s", VERSION_STRING, inssec, mousecapture ? "Press CTRL-END to release mouse" : "Click to capture mouse");
 			vidc_framecount = 0;
-			if (!fullscreen) SetWindowText(ghwnd, s);
+			if (!fullscreen) SetWindowTextA(ghwnd, s);
 			updatemips=0;
 		}
 	}
 
+	if (mousecapture)
+		ClipCursor(&oldclip);
+	mouse_capture_disable();
+	mousecapture = 0;
+	input_close();
 	video_renderer_close();
+	SDL_DestroyWindow(sdl_main_window);
+	sdl_main_window = NULL;
+	fullscreen = 0;
 	AttachThreadInput(current_thread, window_thread, FALSE);
+	/* SDL consumes WM_CLOSE, so explicitly release the native message loop. */
+	PostThreadMessage(window_thread, WM_QUIT, 0, 0);
+	return 0;
 }
 
-static void arc_main_thread(LPVOID wx_menu)
+static unsigned __stdcall arc_main_thread(void *wx_menu)
 {
 	MSG messages;
 
@@ -306,23 +332,25 @@ static void arc_main_thread(LPVOID wx_menu)
 
 	if (arc_init())
 	{
-		MessageBox(NULL, "Configured ROM set is not available.\nConfiguration could not be run.", "Arculator", MB_OK);
+		MessageBoxA(NULL, "Configured ROM set is not available.\nConfiguration could not be run.", "Arculator", MB_OK);
 
 		arc_close();
-		UnregisterClass(szClassName, hinstance);
+		window_destroy();
 		arc_stop_emulation();
 
-		return;
+		return 0;
 	}
 
 	arc_update_menu();
 
-	main_thread_h = (HANDLE)_beginthread(mainthread, 0, NULL);
+	main_thread_h = (HANDLE)_beginthreadex(NULL, 0, mainthread, NULL, 0, NULL);
+	if (!main_thread_h)
+		fatal("Can not start emulation thread\n");
 
 	/* Main Win32 message loop - kept for thread lifetime and handling any
 	   messages that SDL_PollEvent doesn't consume (e.g., some system messages).
 	   Note: Most input events are now handled via SDL_PollEvent in mainthread() */
-	while (GetMessage(&messages, NULL, 0, 0))
+	while (GetMessage(&messages, NULL, 0, 0) > 0)
 	{
 		/* Translate virtual-key messages into character messages */
 		TranslateMessage(&messages);
@@ -330,24 +358,39 @@ static void arc_main_thread(LPVOID wx_menu)
 		DispatchMessage(&messages);
 	}
 
+	quited = 1;
+	WaitForSingleObject(main_thread_h, INFINITE);
+	CloseHandle(main_thread_h);
+	main_thread_h = NULL;
 	arc_close();
-	UnregisterClass(szClassName, hinstance);
+	window_destroy();
+	return 0;
 }
 
 void arc_start_main_thread(void *wx_window, void *wx_menu)
 {
+	/* A native close can stop the worker before it consumes SDL's close events. */
+	SDL_FlushEvent(SDL_QUIT);
+	SDL_FlushEvent(SDL_WINDOWEVENT);
 	quited = 0;
 	pause_main_thread = 0;
 	stop_emulation_pending = 0;
+	win_dofullscreen = 0;
+	win_renderer_reset = 0;
 	main_thread_mutex = SDL_CreateMutex();
 	wx_window_ptr = wx_window;
-	ui_thread_h = (HANDLE)_beginthread(arc_main_thread, 0, wx_menu);
+	ui_thread_h = (HANDLE)_beginthreadex(NULL, 0, arc_main_thread, wx_menu, 0, NULL);
+	if (!ui_thread_h)
+		fatal("Can not start window thread\n");
 }
 
 void arc_stop_main_thread()
 {
 	quited = 1;
-	WaitForSingleObject(main_thread_h, INFINITE);
+	/* Wait for arc_close() to save settings before the selector can reload them. */
+	WaitForSingleObject(ui_thread_h, INFINITE);
+	CloseHandle(ui_thread_h);
+	ui_thread_h = NULL;
 	SDL_DestroyMutex(main_thread_mutex);
 	main_thread_mutex = NULL;
 }
@@ -483,17 +526,19 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			updateins();
 		break;
 
-		case WM_DESTROY:
-		if (!stop_emulation_pending)
+		case WM_CLOSE:
+		if (InterlockedCompareExchange(&stop_emulation_pending, 1, 0) == 0)
 		{
-			stop_emulation_pending = 1;
 			arc_stop_emulation();
 		}
+		return 0;
+
+		case WM_DESTROY:
 		SetMenu(hwnd, 0);
-		PostMessage(hwnd, WM_QUIT, 0, 0);
+		PostQuitMessage(0);
 		break;
 	}
-	return DefWindowProc (hwnd, message, wParam, lParam);
+	return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
 void arc_send_close()
